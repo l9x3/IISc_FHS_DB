@@ -1,0 +1,47 @@
+============================================================
+  FHR Prediction Model – Evaluation Summary
+  Generated: 2026-04-17 06:14:42
+============================================================
+
+  MODEL ARCHITECTURE
+  ------------------
+  Input (8 features)
+  → Dense(64, ReLU) + BatchNorm + Dropout(0.3)
+  → Dense(32, ReLU) + BatchNorm + Dropout(0.3)
+  → Dense(16, ReLU) + BatchNorm + Dropout(0.15)
+  → Dense(1, Sigmoid) scaled to [110, 160] bpm
+
+  TRAINING CONFIGURATION
+  ----------------------
+  Optimizer       : Adam (lr=0.001)
+  Loss function   : MSE
+  Early stopping  : patience=20
+  Epochs trained  : 183
+  Batch size      : 16
+
+  DATA SPLIT
+  ----------
+  Train / Val / Test : 70% / 15% / 15%
+  Samples (train/val/test): see console output
+
+  TEST-SET METRICS
+  ----------------
+  MAE (bpm)            2.7780
+  RMSE (bpm)           3.2149
+  MSE                  10.3355
+  MAPE (%)             1.9819
+  R²                   0.7196
+
+  PER-SAMPLE PREDICTIONS
+  ----------------------
+  Sample       Actual    Predicted   Residual    MAPE%
+  ----------------------------------------------------
+  1             138.0       136.82       1.18     0.86
+  2             136.0       140.14      -4.14     3.04
+  3             152.0       148.35       3.65     2.40
+  4             144.0       141.30       2.70     1.87
+  5             142.0       140.15       1.85     1.30
+  6             133.0       132.51       0.49     0.37
+  7             135.0       140.44      -5.44     4.03
+
+============================================================

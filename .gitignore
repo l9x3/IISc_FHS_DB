@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.env
+.venv
+env/
+venv/
+
+# Generated model outputs (run fhr_prediction_model.py to reproduce)
+fhr_training_history.png
+fhr_evaluation_panels.png
+fhr_feature_importance.png
+fhr_predictions.csv
+fhr_evaluation_summary.txt
+
+# TensorFlow / Keras
+*.h5
+*.keras
+saved_model/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# IDEs
+.idea/
+.vscode/
