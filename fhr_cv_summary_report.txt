@@ -1,0 +1,38 @@
+=================================================================
+FHR PREDICTION MODEL – 5-FOLD CROSS-VALIDATION SUMMARY
+=================================================================
+
+Model Architecture:
+  Input: 8 normalised clinical features
+  Hidden 1: Dense(64, ReLU) → BatchNorm → Dropout(0.20)
+  Hidden 2: Dense(32, ReLU) → BatchNorm → Dropout(0.20)
+  Hidden 3: Dense(16, ReLU) → BatchNorm → Dropout(0.15)
+  Output:   Dense(1, Sigmoid) scaled to [110, 160] bpm
+  Optimizer: Adam (lr=0.001) | Loss: MSE | EarlyStopping(patience=20)
+
+Per-Fold Metrics:
+-----------------------------------------------------------------
+  Fold       MAE      RMSE         MSE     MAPE%        R²   Epochs
+-----------------------------------------------------------------
+     1    11.391    13.383     179.106      7.57   -3.7061       21
+     2     8.773     9.366      87.730      6.01   -0.8887       67
+     3     6.463     7.569      57.288      4.53   -0.7643       21
+     4     7.621     8.755      76.650      5.03   -4.1145       34
+     5     8.163    10.686     114.190      6.03   -0.8603       62
+-----------------------------------------------------------------
+  Mean     8.482     9.952     102.993      5.83   -2.0668
+   Std     1.641     1.988      42.271      1.04    1.5113
+=================================================================
+
+Dataset Details:
+  Total records: 60
+  Records with FHR: 44
+  FHR range: 130–156 bpm
+  Features: Gestational Age, Maternal Age, Weight, Height,
+            Gravida, Para, BMI, Clinical Risk Score
+  Preprocessing: Median imputation + StandardScaler (per fold)
+
+Cross-Validation Setup:
+  Strategy: KFold (k=5, shuffled, random_state=42)
+  Train/Test split: 80% / 20% per fold
+  Early Stopping: patience=20, monitored on val_loss
