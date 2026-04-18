@@ -18,7 +18,7 @@ import seaborn as sns
 
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
@@ -72,14 +72,12 @@ def compute_metrics(y_true, y_pred, prefix=""):
     with np.errstate(divide="ignore", invalid="ignore"):
         safe_denom = np.where(np.abs(y_true) < 1e-9, 1e-9, y_true)
         mape = np.mean(np.abs((y_true - y_pred) / safe_denom)) * 100
-    r2 = r2_score(y_true, y_pred)
     ppa = np.mean(np.abs(y_true - y_pred) <= PPA_TOLERANCE) * 100
     key = (prefix + "_") if prefix else ""
     return {
         f"{key}MAE": mae,
         f"{key}RMSE": rmse,
         f"{key}MAPE": mape,
-        f"{key}R2": r2,
         f"{key}PPA": ppa,
     }
 
@@ -209,10 +207,9 @@ for fold, (trainval_idx, test_idx) in enumerate(kf.split(X_raw), start=1):
 
     log.info(
         "  Train MAE=%.3f | Val MAE=%.3f | Test MAE=%.3f | "
-        "RMSE=%.3f | R²=%.3f | PPA=%.1f%% | MAPE=%.2f%%",
+        "RMSE=%.3f | PPA=%.1f%% | MAPE=%.2f%%",
         train_m["train_MAE"], val_m["val_MAE"], test_m["test_MAE"],
-        test_m["test_RMSE"], test_m["test_R2"],
-        test_m["test_PPA"], test_m["test_MAPE"],
+        test_m["test_RMSE"], test_m["test_PPA"], test_m["test_MAPE"],
     )
 
     # ── Save history ─────────────────────────────────────────────────────────
@@ -244,7 +241,7 @@ metrics_df.to_csv(os.path.join(RESULTS_DIR, "metrics", "fold_metrics.csv"))
 
 metric_keys = [
     "train_MAE", "val_MAE", "test_MAE",
-    "test_RMSE", "test_PPA", "test_MAPE", "test_R2",
+    "test_RMSE", "test_PPA", "test_MAPE",
 ]
 summary = {}
 for k in metric_keys:
@@ -382,8 +379,7 @@ for i, p in enumerate(all_predictions):
     lo, hi = min(y_raw) - 2, max(y_raw) + 2
     ax.plot([lo, hi], [lo, hi], "k--", linewidth=1.5, label="Perfect")
     mae_v = mean_absolute_error(y_t, y_p)
-    r2_v = r2_score(y_t, y_p)
-    ax.set_title(f"Fold {i+1}  |  MAE={mae_v:.2f}  R²={r2_v:.3f}", fontsize=10)
+    ax.set_title(f"Fold {i+1}  |  MAE={mae_v:.2f}", fontsize=10)
     ax.set_xlabel("Actual Heart Rate (bpm)")
     ax.set_ylabel("Predicted Heart Rate (bpm)")
     ax.legend(fontsize=8)
@@ -397,8 +393,7 @@ ax.scatter(all_actual_test, all_pred_test, color="steelblue", edgecolor="white",
 lo, hi = min(y_raw) - 2, max(y_raw) + 2
 ax.plot([lo, hi], [lo, hi], "r--", linewidth=1.5, label="Perfect")
 overall_mae = mean_absolute_error(all_actual_test, all_pred_test)
-overall_r2 = r2_score(all_actual_test, all_pred_test)
-ax.set_title(f"All Folds  |  MAE={overall_mae:.2f}  R²={overall_r2:.3f}", fontsize=10)
+ax.set_title(f"All Folds  |  MAE={overall_mae:.2f}", fontsize=10)
 ax.set_xlabel("Actual Heart Rate (bpm)")
 ax.set_ylabel("Predicted Heart Rate (bpm)")
 ax.legend(fontsize=8)
@@ -441,7 +436,7 @@ plt.savefig(os.path.join(RESULTS_DIR, "plots", "06_std_deviation.png"), dpi=120,
 plt.close()
 
 # ── 7. Box-plots of per-fold metrics ─────────────────────────────────────────
-selected = ["test_MAE", "test_RMSE", "test_R2", "test_PPA", "test_MAPE"]
+selected = ["test_MAE", "test_RMSE", "test_PPA", "test_MAPE"]
 sel_vals = [metrics_df[k].values for k in selected if k in metrics_df.columns]
 sel_labels = [k.replace("_", " ").title() for k in selected if k in metrics_df.columns]
 
