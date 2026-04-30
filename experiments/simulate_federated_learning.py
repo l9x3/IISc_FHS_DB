@@ -30,7 +30,7 @@ import torch
 from src.evaluation import FederatedEvaluator
 from src.federated_trainer import FederatedTrainer
 from src.logger import get_logger
-from src.utils import load_config, save_json
+from src.utils import generate_all_figures, load_config, save_json
 
 log = get_logger(__name__, log_dir="results")
 
@@ -180,6 +180,35 @@ def main() -> None:
         "centralised_metrics": centralised_metrics,
     }
     save_json(comparison, os.path.join(results_dir, "metrics", "comparison.json"))
+
+    # ── Generate all figures ───────────────────────────────────────────────────
+    log.info("Generating figures …")
+    plots_dir = os.path.join(results_dir, "convergence_plots")
+
+    # Collect per-client HR labels for violin plot (sample a small subset for speed)
+    client_labels: dict = {}
+    for sim in trainer.simulators:
+        _, y_all = sim.generate()
+        client_labels[sim.client_id] = y_all
+
+    client_specs = cfg.get("clients", [])
+    bytes_per_round = evaluator.estimate_communication_bytes(
+        trainer.server.global_model,
+        num_rounds=1,
+        num_clients=num_clients,
+    )
+
+    figure_paths = generate_all_figures(
+        round_metrics=round_metrics,
+        client_specs=client_specs,
+        client_labels=client_labels,
+        federated_mae=final_mae,
+        centralised_mae=centralised_metrics["mae"],
+        output_dir=plots_dir,
+        bytes_per_round=float(bytes_per_round),
+    )
+    for fp in figure_paths:
+        log.info("  Figure saved → %s", fp)
 
     log.info("=" * 60)
     log.info("Simulation finished.  Artefacts in: %s", results_dir)

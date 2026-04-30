@@ -14,6 +14,17 @@ from .utils import (
     compute_r2,
     compute_mape,
     load_config,
+    generate_all_figures,
+    plot_convergence,
+    plot_client_mae_trajectories,
+    plot_model_drift,
+    plot_client_data_distribution,
+    plot_label_distributions,
+    plot_federated_vs_centralised,
+    plot_final_client_maes,
+    plot_communication_cost,
+    plot_round_times,
+    plot_summary_dashboard,
 )
 
 __all__ = [
@@ -28,4 +39,15 @@ __all__ = [
     "compute_r2",
     "compute_mape",
     "load_config",
+    "generate_all_figures",
+    "plot_convergence",
+    "plot_client_mae_trajectories",
+    "plot_model_drift",
+    "plot_client_data_distribution",
+    "plot_label_distributions",
+    "plot_federated_vs_centralised",
+    "plot_final_client_maes",
+    "plot_communication_cost",
+    "plot_round_times",
+    "plot_summary_dashboard",
 ]
