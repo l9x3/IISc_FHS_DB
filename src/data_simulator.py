@@ -395,7 +395,16 @@ class ClientDataSimulator:
         Return a small per-feature bias that creates a Non-IID distribution
         shift specific to this client's preprocessing type.
         """
-        rng = np.random.default_rng(hash(self.signal_type) % (2 ** 31))
+        # Use a fixed deterministic mapping instead of hash() which can be
+        # non-reproducible across Python sessions due to hash randomisation.
+        _SIGNAL_TYPE_SEEDS = {
+            "band-pass-filtered": 1001,
+            "wavelet-filtered": 1002,
+            "emd-denoised": 1003,
+            "ica-denoised": 1004,
+        }
+        seed_offset = _SIGNAL_TYPE_SEEDS.get(self.signal_type.lower(), 1000)
+        rng = np.random.default_rng(seed_offset)
         shift = rng.normal(
             loc=self.heart_rate / 140.0 - 1.0,    # ~0 for 140 BPM
             scale=0.05,

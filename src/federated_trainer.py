@@ -182,8 +182,6 @@ class FederatedTrainer:
             for client, (X_te, y_te) in zip(self.clients, self._test_data):
                 X_t = torch.tensor(X_te, dtype=torch.float32).to(self.device)
                 y_t = torch.tensor(y_te, dtype=torch.float32).to(self.device)
-                # Evaluate using the freshly aggregated global model
-                self.server.global_model.set_weights(self.server.get_global_weights())
                 mae = self.server.evaluate_global(X_t, y_t)
                 client_test_maes[client.client_id] = mae
                 all_preds.append(
