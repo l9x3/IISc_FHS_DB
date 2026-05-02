@@ -21,3 +21,6 @@ results/models/
 # OS
 .DS_Store
 Thumbs.db
+
+# Generated FL experiment outputs (reproducible via federated_learning_fhs.py)
+fl_results/
