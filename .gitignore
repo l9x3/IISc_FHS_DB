@@ -14,6 +14,14 @@ venv/
 # Keras / TensorFlow model checkpoints (large binary files)
 results/models/
 
+# Federated learning generated artefacts
+results/model_checkpoints/
+results/convergence_plots/
+results/metrics/
+results/history/
+results/predictions/
+*.log
+
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb

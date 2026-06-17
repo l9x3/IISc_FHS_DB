@@ -1,0 +1,26 @@
+# Core ML / numerical
+torch>=1.9.0
+numpy>=1.20.0
+scipy>=1.7.0
+
+# Data handling
+pandas>=1.3.0
+
+# Visualisation
+matplotlib>=3.4.0
+seaborn>=0.11.0
+
+# Machine learning utilities
+scikit-learn>=0.24.0
+
+# Configuration
+PyYAML>=5.4
+
+# Optional: wavelet denoising
+# PyWavelets>=1.1.0
+
+# Optional: EMD denoising
+# EMD-signal>=1.2.3
+
+# Testing
+pytest>=6.0.0

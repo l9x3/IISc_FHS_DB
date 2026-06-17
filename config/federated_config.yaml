@@ -1,0 +1,90 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Federated Learning Configuration
+# Fetal Heart Rate Prediction – IISc FHS DB
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Model Architecture (MLP)
+model:
+  input_dim: 256                        # feature-window dimension fed into MLP
+  layer_dimensions: [256, 128, 64, 32, 1]
+  activations: [relu, relu, relu, relu, linear]
+  dropout_rate: 0.3
+
+# Training Hyperparameters
+training:
+  batch_size: 512
+  learning_rate: 0.01
+  local_epochs: 5
+  optimizer: sgd
+  loss_function: mae
+
+# Federated Learning Configuration
+federated:
+  num_communication_rounds: 100
+  client_participation_rate: 1.0        # fraction of clients per round (1.0 = all)
+  aggregation_method: fedavg_weighted   # FedAvg weighted by dataset size
+  seed: 42
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Client Specifications
+# (total windows = 409,852;  HR range 130–156 BPM;  4 preprocessing types)
+# ─────────────────────────────────────────────────────────────────────────────
+clients:
+  - client_id: 1
+    num_windows: 70000
+    heart_rate: 140
+    signal_type: band-pass-filtered
+
+  - client_id: 2
+    num_windows: 55000
+    heart_rate: 144
+    signal_type: wavelet-filtered
+
+  - client_id: 3
+    num_windows: 48000
+    heart_rate: 148
+    signal_type: emd-denoised
+
+  - client_id: 4
+    num_windows: 42000
+    heart_rate: 152
+    signal_type: ica-denoised
+
+  - client_id: 5
+    num_windows: 45000
+    heart_rate: 136
+    signal_type: wavelet-filtered
+
+  - client_id: 6
+    num_windows: 38000
+    heart_rate: 132
+    signal_type: band-pass-filtered
+
+  - client_id: 7
+    num_windows: 30000
+    heart_rate: 156
+    signal_type: emd-denoised
+
+  - client_id: 8
+    num_windows: 28000
+    heart_rate: 150
+    signal_type: ica-denoised
+
+  - client_id: 9
+    num_windows: 48000
+    heart_rate: 138
+    signal_type: wavelet-filtered
+
+  - client_id: 10
+    num_windows: 5852
+    heart_rate: 130
+    signal_type: band-pass-filtered
+
+# Evaluation Settings
+evaluation:
+  kfold: 5
+  train_split: 0.70
+  val_split: 0.15
+  test_split: 0.15
+  metrics: [mae, rmse, r2, mape]
+  results_dir: results
