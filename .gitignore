@@ -14,6 +14,10 @@ venv/
 # Keras / TensorFlow model checkpoints (large binary files)
 results/models/
 
+# PyTorch checkpoints
+*.pt
+*.pth
+
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb

@@ -1,0 +1,73 @@
+# Federated Learning Configuration for Fetal Heart Rate Prediction
+# ─────────────────────────────────────────────────────────────────
+
+federated_learning:
+  num_clients: 10
+  num_rounds: 50
+  clients_per_round: 10          # number of clients sampled each round
+  local_epochs: 5
+  seed: 42
+
+model:
+  input_dim: 20                  # number of simulated features per sample
+  hidden_dims: [256, 128, 64, 32]
+  dropout_rate: 0.3
+  output_activation: linear
+
+training:
+  batch_size: 512
+  learning_rate: 0.01
+  momentum: 0.9
+  loss: mae
+
+# Per-client specifications (from the research table)
+clients:
+  - id: 1
+    feature_windows: 70000
+    dominant_hr: 140
+    signal_quality: band_pass
+  - id: 2
+    feature_windows: 55000
+    dominant_hr: 144
+    signal_quality: wavelet
+  - id: 3
+    feature_windows: 48000
+    dominant_hr: 135
+    signal_quality: emd
+  - id: 4
+    feature_windows: 40000
+    dominant_hr: 130
+    signal_quality: ica
+  - id: 5
+    feature_windows: 30000
+    dominant_hr: 146
+    signal_quality: band_pass
+  - id: 6
+    feature_windows: 25000
+    dominant_hr: 142
+    signal_quality: wavelet
+  - id: 7
+    feature_windows: 20000
+    dominant_hr: 148
+    signal_quality: emd
+  - id: 8
+    feature_windows: 15000
+    dominant_hr: 156
+    signal_quality: ica
+  - id: 9
+    feature_windows: 10000
+    dominant_hr: 150
+    signal_quality: band_pass
+  - id: 10
+    feature_windows: 5800
+    dominant_hr: 138
+    signal_quality: wavelet
+
+hyperparameter_sweep:
+  batch_sizes: [128, 256, 512]
+  learning_rates: [0.0001, 0.001, 0.01]
+
+paths:
+  results_dir: results/federated
+  plots_dir: results/federated/plots
+  metrics_dir: results/federated/metrics
