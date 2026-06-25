@@ -43,6 +43,7 @@ tf.random.set_seed(SEED)
 # ── Paths ─────────────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, "IISc_features_complete_subset.csv")
+RECORDS_PATH = os.path.join(BASE_DIR, "dataset", "Records.csv")
 RESULTS_DIR = os.path.join(BASE_DIR, "results")
 
 for sub in ["models", "history", "predictions", "metrics", "plots"]:
@@ -56,6 +57,7 @@ LR = 1e-3
 PATIENCE = 30
 VAL_SPLIT = 0.20          # fraction of train+val used as validation
 PPA_TOLERANCE = 5.0       # ±5 bpm acceptable range for PPA
+AGE_GROUP_PPA_TOLERANCE = 10.0
 # Physiological clipping bounds for fetal heart rate (bpm)
 HR_MIN, HR_MAX = 100.0, 200.0
 
@@ -81,6 +83,31 @@ def compute_metrics(y_true, y_pred, prefix=""):
         f"{key}MAPE": mape,
         f"{key}R2": r2,
         f"{key}PPA": ppa,
+    }
+
+
+def age_group(age):
+    """Return the maternal age group used for subgroup reporting."""
+    if age < 21:
+        return "<21"
+    if age <= 30:
+        return "21–30"
+    if age <= 40:
+        return "31–40"
+    return ">40"
+
+
+def compute_unprefixed_metrics(y_true, y_pred, ppa_tolerance):
+    """Return table-ready regression metrics for one subgroup."""
+    mae = mean_absolute_error(y_true, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    r2 = r2_score(y_true, y_pred) if len(y_true) > 1 else np.nan
+    ppa = np.mean(np.abs(y_true - y_pred) <= ppa_tolerance) * 100
+    return {
+        "MAE": mae,
+        "RMSE": rmse,
+        "R2": r2,
+        f"PPA_{int(ppa_tolerance)}": ppa,
     }
 
 
@@ -125,6 +152,15 @@ log.info("Dataset shape: %s", df.shape)
 feature_cols = [c for c in df.columns if c not in ("Subject", "Heart_Rate")]
 X_raw = df[feature_cols].values.astype(np.float32)
 y_raw = df["Heart_Rate"].values.astype(np.float32)
+
+age_by_subject = None
+if "Subject" in df.columns and os.path.exists(RECORDS_PATH):
+    records_df = pd.read_csv(RECORDS_PATH)
+    if {"Subject", "Age"}.issubset(records_df.columns):
+        records_df["Subject"] = pd.to_numeric(records_df["Subject"], errors="coerce")
+        records_df["Age"] = pd.to_numeric(records_df["Age"], errors="coerce")
+        age_by_subject = records_df.dropna(subset=["Subject", "Age"]).set_index("Subject")["Age"]
+        log.info("Loaded maternal ages for %d subjects", len(age_by_subject))
 
 log.info("Features: %d  |  Samples: %d", X_raw.shape[1], X_raw.shape[0])
 log.info("Target range: %.1f – %.1f  (mean %.1f)", y_raw.min(), y_raw.max(), y_raw.mean())
@@ -223,6 +259,11 @@ for fold, (trainval_idx, test_idx) in enumerate(kf.split(X_raw), start=1):
 
     # ── Save predictions ──────────────────────────────────────────────────────
     pred_df = pd.DataFrame({
+        "subject": np.concatenate([
+            df.iloc[trainval_idx[train_sub]]["Subject"].values,
+            df.iloc[trainval_idx[val_sub]]["Subject"].values,
+            df.iloc[test_idx]["Subject"].values,
+        ]),
         "split": (["train"] * len(y_train) + ["val"] * len(y_val) + ["test"] * len(y_test)),
         "actual": np.concatenate([y_train, y_val, y_test]),
         "predicted": np.concatenate([y_train_pred, y_val_pred, y_test_pred]),
@@ -231,7 +272,11 @@ for fold, (trainval_idx, test_idx) in enumerate(kf.split(X_raw), start=1):
         os.path.join(RESULTS_DIR, "predictions", f"fold_{fold}_predictions.csv"),
         index=False,
     )
-    all_predictions.append({"fold": fold, "test": (y_test, y_test_pred)})
+    all_predictions.append({
+        "fold": fold,
+        "test": (y_test, y_test_pred),
+        "test_subjects": df.iloc[test_idx]["Subject"].values,
+    })
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -257,6 +302,49 @@ for k in metric_keys:
 
 with open(os.path.join(RESULTS_DIR, "metrics", "summary.json"), "w") as f:
     json.dump(summary, f, indent=2)
+
+age_group_df = pd.DataFrame()
+if age_by_subject is not None:
+    age_group_rows = []
+    for prediction in all_predictions:
+        y_test, y_test_pred = prediction["test"]
+        for subject, actual, predicted in zip(
+            prediction["test_subjects"], y_test, y_test_pred
+        ):
+            age = age_by_subject.get(subject)
+            if pd.isna(age):
+                continue
+            age_group_rows.append({
+                "Age Group": age_group(age),
+                "Model": "Deep learning",
+                "Subject": subject,
+                "actual": actual,
+                "predicted": predicted,
+            })
+
+    if age_group_rows:
+        age_predictions_df = pd.DataFrame(age_group_rows)
+        table_rows = []
+        for group_name in ["<21", "21–30", "31–40", ">40"]:
+            group_df = age_predictions_df[age_predictions_df["Age Group"] == group_name]
+            if group_df.empty:
+                continue
+            group_metrics = compute_unprefixed_metrics(
+                group_df["actual"].values,
+                group_df["predicted"].values,
+                AGE_GROUP_PPA_TOLERANCE,
+            )
+            table_rows.append({
+                "Age Group": group_name,
+                "Model": "Deep learning",
+                "N": len(group_df),
+                **group_metrics,
+            })
+        age_group_df = pd.DataFrame(table_rows)
+        age_group_df.to_csv(
+            os.path.join(RESULTS_DIR, "metrics", "age_group_metrics.csv"),
+            index=False,
+        )
 
 log.info("═" * 60)
 log.info("SUMMARY  (mean ± std across %d folds)", N_FOLDS)
@@ -288,6 +376,12 @@ with open(report_path, "w") as rpt:
     rpt.write("─" * 70 + "\n")
     for k, v in summary.items():
         rpt.write(f"  {k:<18}  {v['mean']:.4f}  ±  {v['std']:.4f}\n")
+    if not age_group_df.empty:
+        rpt.write("\n")
+        rpt.write("─" * 70 + "\n")
+        rpt.write(f"  Age-Group Test Metrics (PPA tolerance ±{AGE_GROUP_PPA_TOLERANCE:.0f} bpm)\n")
+        rpt.write("─" * 70 + "\n")
+        rpt.write(age_group_df.to_string(index=False) + "\n")
 
 log.info("Report saved → %s", report_path)
 
